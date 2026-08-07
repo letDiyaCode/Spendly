@@ -57,6 +57,7 @@ Built with a **Feature-First Architecture**, Spendly ensures scalability and mai
 | **Charts** | [FL Chart](https://pub.dev/packages/fl_chart) |
 | **Animations** | [Flutter Animate](https://pub.dev/packages/flutter_animate) |
 | **Local Storage** | [Shared Preferences](https://pub.dev/packages/shared_preferences) |
+| **Platforms** | Android, iOS, macOS, Windows, Linux, Web |
 
 ---
 ## 🏗 Architecture
