@@ -30,7 +30,7 @@ Built with a **Feature-First Architecture**, Spendly ensures scalability and mai
 *   **Session Management**: Persistent login states using `shared_preferences`.
 
 ### 📊 Personal Finance & Analytics
-*   **Expense Tracking**: Log individual expenses with categories, timestamps, and attached receipt previews.
+*   **Expense Tracking**: Log individual expenses with categories, timestamps, and attached receipt previews, featuring stable expense mode switching for a seamless user experience.
 *   **Visual Analytics**: Interactive pie and bar charts via `fl_chart` to monitor monthly burn rates.
 *   **Activity Feed**: A chronological history of all financial transactions and updates.
 
@@ -167,6 +167,9 @@ Routing is centralized in `lib/core/router/`:
 dart
 context.pushNamed(AppRoute.expenseDetails.name, pathParameters: {'id': '123'});
 
+
+### Expense Mode Switching
+The expense creation flow in `AddExpenseScreen` supports stable mode switching, ensuring seamless transitions and robust state preservation when toggling between different expense configurations.
 
 ### Configuration Modes
 The application environment can be toggled in `lib/core/config/app_config.dart`. This allows developers to switch between a demo environment and the original production-ready mode.
