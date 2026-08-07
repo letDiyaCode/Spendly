@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
@@ -229,37 +232,67 @@ class UserAvatar extends StatelessWidget {
     return parts[0][0].toUpperCase();
   }
 
+  ImageProvider? _avatarImage() {
+    final source = avatarUrl;
+    if (source == null || source.isEmpty) return null;
+    if (_isInlineImage(source)) {
+      final bytes = _tryDecodeInlineImage(source);
+      return bytes == null ? null : MemoryImage(bytes);
+    }
+    return NetworkImage(source);
+  }
+
+  bool _isInlineImage(String value) => value.startsWith('data:image/');
+
+  Uint8List _decodeInlineImage(String value) {
+    final commaIndex = value.indexOf(',');
+    if (commaIndex == -1) return Uint8List(0);
+    return base64Decode(value.substring(commaIndex + 1));
+  }
+
+  Uint8List? _tryDecodeInlineImage(String value) {
+    try {
+      final bytes = _decodeInlineImage(value);
+      return bytes.isEmpty ? null : bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       alignment: Alignment.center,
       children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: avatarUrl == null ? _colorFromId(userId) : Colors.transparent,
-            shape: BoxShape.circle,
-            image: avatarUrl != null
-                ? DecorationImage(
-                    image: NetworkImage(avatarUrl!),
-                    fit: BoxFit.cover,
+        Builder(builder: (context) {
+          final image = _avatarImage();
+          return Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: image == null ? _colorFromId(userId) : Colors.transparent,
+              shape: BoxShape.circle,
+              image: image != null
+                  ? DecorationImage(
+                      image: image,
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: image == null
+                ? Center(
+                    child: Text(
+                      _initials(name),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: size * 0.4,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   )
                 : null,
-          ),
-          child: avatarUrl == null
-              ? Center(
-                  child: Text(
-                    _initials(name),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: size * 0.4,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                )
-              : null,
-        ),
+          );
+        }),
         if (isVerified)
           Positioned(
             bottom: 0,
@@ -305,8 +338,28 @@ class SpendlyImage extends StatelessWidget {
         (uri.scheme == 'http' || uri.scheme == 'https');
   }
 
+  bool _isInlineImage(String value) => value.startsWith('data:image/');
+
+  Uint8List _decodeInlineImage(String value) {
+    final commaIndex = value.indexOf(',');
+    if (commaIndex == -1) return Uint8List(0);
+    return base64Decode(value.substring(commaIndex + 1));
+  }
+
+  Uint8List? _tryDecodeInlineImage(String value) {
+    try {
+      final bytes = _decodeInlineImage(value);
+      return bytes.isEmpty ? null : bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final inlineBytes = _isInlineImage(source)
+        ? _tryDecodeInlineImage(source)
+        : null;
     final image = _isRemote(source)
         ? Image.network(
             source,
@@ -315,7 +368,16 @@ class SpendlyImage extends StatelessWidget {
             fit: fit,
             errorBuilder: (context, error, stackTrace) => _fallback(context),
           )
-        : _fallback(context);
+        : inlineBytes != null
+            ? Image.memory(
+                inlineBytes,
+                width: width,
+                height: height,
+                fit: fit,
+                errorBuilder: (context, error, stackTrace) =>
+                    _fallback(context),
+              )
+            : _fallback(context);
 
     if (borderRadius == null) return image;
     return ClipRRect(borderRadius: borderRadius!, child: image);
@@ -352,19 +414,19 @@ class StatusBadge extends StatelessWidget {
   static StatusBadge pending({String label = 'Pending'}) => StatusBadge(
         label: label,
         color: SpendlyColors.warning,
-      backgroundColor: SpendlyColors.warning.withAlpha(28),
+        backgroundColor: SpendlyColors.warning.withAlpha(28),
       );
 
   static StatusBadge verified({String label = 'Verified'}) => StatusBadge(
         label: label,
         color: SpendlyColors.success,
-      backgroundColor: SpendlyColors.success.withAlpha(28),
+        backgroundColor: SpendlyColors.success.withAlpha(28),
       );
 
   static StatusBadge rejected({String label = 'Rejected'}) => StatusBadge(
         label: label,
         color: SpendlyColors.danger,
-      backgroundColor: SpendlyColors.danger.withAlpha(28),
+        backgroundColor: SpendlyColors.danger.withAlpha(28),
       );
 
   @override
@@ -414,6 +476,7 @@ class StatCard extends StatelessWidget {
       gradient: gradient,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -421,22 +484,34 @@ class StatCard extends StatelessWidget {
               color: gradient != null ? Colors.white24 : color.withAlpha(26),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: gradient != null ? Colors.white : color, size: 20),
+            child: Icon(
+              icon,
+              color: gradient != null ? Colors.white : color,
+              size: 20,
+            ),
           ),
-          const Spacer(),
+          const SizedBox(height: 12),
           Text(
             title,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: gradient != null ? Colors.white70 : SpendlyColors.neutral500,
+                  color: gradient != null
+                      ? Colors.white70
+                      : SpendlyColors.neutral500,
                 ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: gradient != null ? Colors.white : color,
-                ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: gradient != null ? Colors.white : color,
+                  ),
+            ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 2),
@@ -444,8 +519,12 @@ class StatCard extends StatelessWidget {
               subtitle!,
               style: TextStyle(
                 fontSize: 10,
-                color: gradient != null ? Colors.white60 : Theme.of(context).colorScheme.onSurfaceVariant,
+                color: gradient != null
+                    ? Colors.white60
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ],
@@ -596,38 +675,54 @@ class SpendlyCategoryChipGrid<T> extends StatelessWidget {
         final isSelected = item == selected;
         final labelStr = label(item);
         final emoji = labelStr.contains(' ') ? labelStr.split(' ').first : '';
-        final text = labelStr.contains(' ') ? labelStr.split(' ').skip(1).join(' ') : labelStr;
+        final text = labelStr.contains(' ')
+            ? labelStr.split(' ').skip(1).join(' ')
+            : labelStr;
 
         return GestureDetector(
           onTap: () => onSelect(item),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outline,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
               ),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (emoji.isNotEmpty)
-                  Text(emoji, style: const TextStyle(fontSize: 22))
-                else
-                  const Icon(Icons.category_outlined, size: 20),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: emoji.isNotEmpty
+                          ? Text(emoji, style: const TextStyle(fontSize: 22))
+                          : const Icon(Icons.category_outlined, size: 20),
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         );

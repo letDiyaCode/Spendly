@@ -85,8 +85,9 @@ class _SettleUpScreenState extends ConsumerState<SettleUpScreen> {
     try {
       final picked = await _picker.pickImage(
         source: source,
-        imageQuality: 85,
-        maxWidth: 1200,
+        imageQuality: 55,
+        maxWidth: 1000,
+        maxHeight: 1000,
       );
       if (picked != null) setState(() => _proofImagePath = picked.path);
     } catch (e) {

@@ -141,7 +141,12 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
   Future<void> _pickReceipt(ImageSource source) async {
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: source, imageQuality: 60);
+    final image = await picker.pickImage(
+      source: source,
+      imageQuality: 55,
+      maxWidth: 1000,
+      maxHeight: 1000,
+    );
     if (image == null) return;
 
     setState(() => _isUploading = true);

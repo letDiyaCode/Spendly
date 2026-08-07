@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,33 +24,37 @@ class CloudinaryService {
   );
 
   Future<String?> uploadImage(File imageFile) async {
-    return _uploadMultipart(
-      await http.MultipartFile.fromPath('file', imageFile.path),
+    final bytes = await imageFile.readAsBytes();
+    return _uploadBytes(
+      bytes,
+      filename: imageFile.uri.pathSegments.isEmpty
+          ? 'spendly-image.jpg'
+          : imageFile.uri.pathSegments.last,
     );
   }
 
   Future<String?> uploadXFile(XFile imageFile) async {
-    return _uploadMultipart(
-      http.MultipartFile.fromBytes(
-        'file',
-        await imageFile.readAsBytes(),
-        filename: imageFile.name,
-      ),
+    return _uploadBytes(
+      await imageFile.readAsBytes(),
+      filename: imageFile.name,
     );
   }
 
-  Future<String?> _uploadMultipart(http.MultipartFile file) async {
+  Future<String?> _uploadBytes(
+    Uint8List bytes, {
+    required String filename,
+  }) async {
     if (uploadPreset.trim().isEmpty) {
       debugPrint(
         'Cloudinary upload preset is empty. Set SPENDLY_CLOUDINARY_UPLOAD_PRESET.',
       );
-      return null;
+      return _inlineImageDataUrl(bytes, filename);
     }
     if (cloudName.trim().isEmpty) {
       debugPrint(
         'Cloudinary cloud name is empty. Set SPENDLY_CLOUDINARY_CLOUD_NAME.',
       );
-      return null;
+      return _inlineImageDataUrl(bytes, filename);
     }
 
     final url = Uri.parse(
@@ -58,17 +63,30 @@ class CloudinaryService {
 
     final request = http.MultipartRequest("POST", url)
       ..fields['upload_preset'] = uploadPreset
-      ..files.add(file);
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: filename,
+        ),
+      );
 
-    final streamedResponse = await request.send();
-    final body = await streamedResponse.stream.bytesToString();
+    late final http.StreamedResponse streamedResponse;
+    late final String body;
+    try {
+      streamedResponse = await request.send();
+      body = await streamedResponse.stream.bytesToString();
+    } catch (e) {
+      debugPrint('Cloudinary upload request failed: $e');
+      return _inlineImageDataUrl(bytes, filename);
+    }
 
     if (streamedResponse.statusCode < 200 ||
         streamedResponse.statusCode >= 300) {
       debugPrint(
         'Cloudinary upload failed (${streamedResponse.statusCode}). Body: $body',
       );
-      return null;
+      return _inlineImageDataUrl(bytes, filename);
     }
 
     try {
@@ -78,12 +96,23 @@ class CloudinaryService {
         debugPrint(
           'Cloudinary upload succeeded but secure_url is missing. Body: $body',
         );
-        return null;
+        return _inlineImageDataUrl(bytes, filename);
       }
       return secureUrl;
     } catch (e) {
       debugPrint('Cloudinary response parse error: $e. Body: $body');
-      return null;
+      return _inlineImageDataUrl(bytes, filename);
     }
+  }
+
+  String _inlineImageDataUrl(Uint8List bytes, String filename) {
+    final extension = filename.split('.').last.toLowerCase();
+    final mimeType = switch (extension) {
+      'png' => 'image/png',
+      'gif' => 'image/gif',
+      'webp' => 'image/webp',
+      _ => 'image/jpeg',
+    };
+    return 'data:$mimeType;base64,${base64Encode(bytes)}';
   }
 }

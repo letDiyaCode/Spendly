@@ -38,8 +38,9 @@ class _SettlementsScreenState extends ConsumerState<SettlementsScreen> {
     try {
       final picked = await _picker.pickImage(
         source: source,
-        imageQuality: 85,
-        maxWidth: 1200,
+        imageQuality: 55,
+        maxWidth: 1000,
+        maxHeight: 1000,
       );
       if (picked != null) setState(() => _proofImagePath = picked.path);
     } catch (e) {
@@ -286,25 +287,30 @@ class _SettlementsScreenState extends ConsumerState<SettlementsScreen> {
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: () => _showProofDialog(context, s.proofUrl!),
-                child: Container(
-                  height: 100,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(
-                      image: NetworkImage(s.proofUrl!),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SpendlyImage(
+                      source: s.proofUrl!,
+                      height: 100,
+                      width: double.infinity,
                       fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      color: Colors.black26,
                     ),
-                    child: const Center(
-                      child: Icon(Icons.zoom_in_rounded, color: Colors.white, size: 28),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.black26,
+                        ),
+                      ),
                     ),
-                  ),
+                    const Icon(
+                      Icons.zoom_in_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -419,15 +425,9 @@ class _SettlementsScreenState extends ConsumerState<SettlementsScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: InteractiveViewer(
-                child: Image.network(
-                  url,
+                child: SpendlyImage(
+                  source: url,
                   fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    );
-                  },
                 ),
               ),
             ),
