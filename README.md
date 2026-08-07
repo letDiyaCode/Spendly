@@ -30,9 +30,9 @@ Built with a **Feature-First Architecture**, Spendly ensures scalability and mai
 *   **Session Management**: Persistent login states using `shared_preferences`.
 
 ### 📊 Personal Finance & Analytics
-*   **Expense Tracking**: Log individual expenses with categories and timestamps.
+*   **Expense Tracking**: Log individual expenses with categories, timestamps, and attached receipt previews.
 *   **Visual Analytics**: Interactive pie and bar charts via `fl_chart` to monitor monthly burn rates.
-*   **Activity Feed**: A chronological history of all financial transactions.
+*   **Activity Feed**: A chronological history of all financial transactions and updates.
 
 ### 👥 Group Management & Settlements
 *   **Shared Ledgers**: Create groups for specific events or households.
@@ -40,7 +40,7 @@ Built with a **Feature-First Architecture**, Spendly ensures scalability and mai
 *   **Comments & Interaction**: Discuss specific expenses within the app to clarify costs.
 
 ### 🛠 Core Utilities
-*   **Image Support**: Attach receipts to expenses using `image_picker`.
+*   **Receipt Uploads & Previews**: Upload receipts seamlessly using `image_picker` integrated with `Cloudinary` cloud storage, featuring interactive image previews.
 *   **Theming**: Dynamic theme support (Light/Dark mode) defined in the core configuration.
 *   **Deep Linking**: Advanced routing handled by `go_router`.
 *   **Flexible Environments**: Support for toggling between **Demo Mode** and **Original Mode** via app configuration.
@@ -138,6 +138,14 @@ expenseList.when(
   loading: () => CircularProgressIndicator(),
   error: (err, stack) => Text('Error: $err'),
 );
+
+
+### Cloudinary Integration
+Receipts and profile images are uploaded to Cloudinary. Here is an example of uploading an image file:
+
+dart
+final cloudinaryService = ref.read(cloudinaryServiceProvider);
+final imageUrl = await cloudinaryService.uploadImage(imageFile);
 
 
 ### Navigation
