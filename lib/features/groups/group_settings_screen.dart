@@ -317,43 +317,51 @@ class GroupSettingsScreen extends ConsumerWidget {
     }
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Center(
-              child: Container(
-                width: 32,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: SpendlyColors.neutral300,
-                  borderRadius: BorderRadius.circular(2),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+            ),
+            children: [
+              const SizedBox(height: 8),
+              Center(
+                child: Container(
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: SpendlyColors.neutral300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text('Add Members',
-                  style: Theme.of(ctx)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-            ),
-            ...availableUsers.map((u) => ListTile(
-                  leading: UserAvatar(name: u.name, userId: u.id),
-                  title: Text(u.name),
-                  subtitle: Text(u.email),
-                  onTap: () {
-                    ref.read(groupActionProvider).addMember(group.id, u.id);
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${u.name} added!')),
-                    );
-                  },
-                )),
-            const SizedBox(height: 16),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text('Add Members',
+                    style: Theme.of(ctx)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+              ),
+              ...availableUsers.map((u) => ListTile(
+                    leading: UserAvatar(name: u.name, userId: u.id),
+                    title: Text(u.name, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(u.email, overflow: TextOverflow.ellipsis),
+                    onTap: () {
+                      ref.read(groupActionProvider).addMember(group.id, u.id);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${u.name} added!')),
+                      );
+                    },
+                  )),
+            ],
+          ),
         ),
       ),
     );

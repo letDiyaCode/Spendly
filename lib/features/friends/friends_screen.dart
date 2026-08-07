@@ -90,8 +90,8 @@ class FriendsScreen extends ConsumerWidget {
                             title: 'No friends yet',
                             subtitle:
                                 'Add a friend directly or join a group to see balances here',
-                              actionLabel: 'Add Friend',
-                              onAction: () => context.push('/friends/add'),
+                            actionLabel: 'Add Friend',
+                            onAction: () => context.push('/friends/add'),
                           ),
                         ),
                       ),
@@ -225,57 +225,72 @@ class _FriendTile extends StatelessWidget {
                 : 'You owe ${name.split(' ').first}',
         style: AppTextStyles.caption(color: color),
       ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            isEven ? '₹0.00' : '₹${balance.abs().toStringAsFixed(2)}',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
-              color: color,
+      trailing: SizedBox(
+        width: 112,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              isEven ? '₹0.00' : '₹${balance.abs().toStringAsFixed(2)}',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: color,
+              ),
             ),
-          ),
-          if (!isEven) ...[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (onRemind != null)
+            if (!isEven) ...[
+              const SizedBox(height: 3),
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 4,
+                runSpacing: 3,
+                children: [
+                  if (onRemind != null)
+                    GestureDetector(
+                      onTap: onRemind,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: SpendlyColors.warning.withAlpha(15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'Remind',
+                          style: AppTextStyles.caption(
+                            color: SpendlyColors.warning,
+                          ).copyWith(fontSize: 10),
+                        ),
+                      ),
+                    ),
                   GestureDetector(
-                    onTap: onRemind,
+                    onTap: onSettle,
                     child: Container(
-                      margin: const EdgeInsets.only(top: 4, right: 6),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
-                        color: SpendlyColors.warning.withAlpha(15),
+                        color: SpendlyColors.primary.withAlpha(15),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text('Remind',
-                          style: AppTextStyles.caption(
-                              color: SpendlyColors.warning)),
-                    ),
-                  ),
-                GestureDetector(
-                  onTap: onSettle,
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: SpendlyColors.primary.withAlpha(15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text('Settle',
+                      child: Text(
+                        'Settle',
                         style: AppTextStyles.caption(
-                            color: SpendlyColors.primary)),
+                          color: SpendlyColors.primary,
+                        ).copyWith(fontSize: 10),
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
