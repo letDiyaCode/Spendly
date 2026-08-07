@@ -52,14 +52,13 @@ Built with a **Feature-First Architecture**, Spendly ensures scalability and mai
 | :--- | :--- |
 | **Framework** | [Flutter (Dart)](https://flutter.dev) |
 | **State Management** | [Riverpod](https://riverpod.dev) |
-| **Backend/DB** | [Firebase (Firestore, Auth)](https://firebase.google.com) |
+| **Backend/DB** | [Firebase (Firestore, Security Rules, Auth)](https://firebase.google.com) |
 | **Navigation** | [GoRouter](https://pub.dev/packages/go_router) |
 | **Charts** | [FL Chart](https://pub.dev/packages/fl_chart) |
 | **Animations** | [Flutter Animate](https://pub.dev/packages/flutter_animate) |
 | **Local Storage** | [Shared Preferences](https://pub.dev/packages/shared_preferences) |
 
 ---
-
 ## 🏗 Architecture
 
 Spendly follows a **Feature-First / Layered Architecture**, separating concerns to ensure the codebase remains clean as it grows.
@@ -171,6 +170,12 @@ flutter test
 This project adheres to `flutter_lints`. To check for linting issues:
 bash
 flutter analyze
+
+
+### Firebase Configuration
+Firestore security rules and database indexes are managed locally in `firestore.rules` and `firestore.indexes.json`. These can be deployed to Firebase using the CLI:
+bash
+firebase deploy --only firestore
 
 
 ### Build Configuration
