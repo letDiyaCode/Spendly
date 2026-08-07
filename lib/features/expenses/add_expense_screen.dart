@@ -121,11 +121,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       final groups = ref.read(groupProvider);
       final group = groups.isEmpty ? null : groups.where((g) => g.id == _selectedGroupId).firstOrNull;
       final ids = group?.memberIds ?? [currentUser.id];
-      _syncControllers(ids);
       return ids;
     } else {
       final ids = [currentUser.id, ..._selectedFriendIds];
-      _syncControllers(ids);
       return ids;
     }
   }
@@ -137,6 +135,18 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     }
     // Optional: remove controllers for IDs no longer in list (to save memory)
     // _splitControllers.removeWhere((key, value) => !ids.contains(key));
+  }
+
+  String? _effectivePayerId(List<String> participantIds, String? fallbackUserId) {
+    if (participantIds.isEmpty) {
+      return null;
+    }
+    if (_paidById != null && participantIds.contains(_paidById)) {
+      return _paidById;
+    }
+    return participantIds.contains(fallbackUserId)
+        ? fallbackUserId
+        : participantIds.first;
   }
 
   Future<void> _pickReceipt(ImageSource source) async {
@@ -171,6 +181,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     final currentUser = ref.watch(authProvider);
     final amount = double.tryParse(_amountController.text) ?? 0;
     final participants = _currentParticipants;
+    _syncControllers(participants);
+    final payerId = _effectivePayerId(participants, currentUser?.id);
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -188,6 +200,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               Text('Where to add?', style: AppTextStyles.sectionLabel()),
               const SizedBox(height: 10),
               SegmentedButton<ExpenseType>(
+                key: ValueKey('expense_mode_$_expenseType'),
                 segments: const [
                   ButtonSegment(value: ExpenseType.personal, label: Text('With Friends'), icon: Icon(Icons.people_outline)),
                   ButtonSegment(value: ExpenseType.group, label: Text('In a Group'), icon: Icon(Icons.groups_outlined)),
@@ -195,8 +208,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 selected: {_expenseType},
                 onSelectionChanged: (s) => setState(() {
                   _expenseType = s.first;
-                  // _selectedFriendIds.clear(); // Keep them too if we want, or clear them. 
-                  // But clearing controllers is what causes data loss.
+                  _paidById = null;
                 }),
               ),
               const SizedBox(height: 20),
@@ -207,10 +219,12 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                Text('Select Group', style: AppTextStyles.sectionLabel()),
                const SizedBox(height: 10),
                DropdownButtonFormField<String>(
+                 key: const ValueKey('group_picker'),
                  initialValue: _selectedGroupId,
                  items: groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))).toList(),
                  onChanged: (val) => setState(() {
                    _selectedGroupId = val;
+                   _paidById = null;
                  }),
                  decoration: const InputDecoration(prefixIcon: Icon(Icons.group_work_outlined)),
                ),
@@ -235,12 +249,14 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                             final f = friends[i];
                             final isSelected = _selectedFriendIds.contains(f.id);
                             return GestureDetector(
+                              key: ValueKey('friend_${f.id}_$isSelected'),
                               onTap: () => setState(() {
                                 if (isSelected) {
                                   _selectedFriendIds.remove(f.id);
                                 } else {
                                   _selectedFriendIds.add(f.id);
                                 }
+                                _paidById = null;
                               }),
                               child: Column(
                                 children: [
@@ -283,7 +299,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               Text('Paid by', style: AppTextStyles.sectionLabel()),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                initialValue: _paidById ?? currentUser?.id,
+                key: ValueKey('payer_${participants.join('_')}'),
+                initialValue: payerId,
                 items: participants.map((id) {
                   final u = ref.read(userByIdProvider(id));
                   final name = id == currentUser?.id ? 'You' : (u?.name.split(' ').first ?? id);
@@ -583,7 +600,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       return;
     }
 
-    final paidById = _paidById ?? user.id;
+    final paidById = _effectivePayerId(participants, user.id) ?? user.id;
     if (!participants.contains(paidById)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Payer must be one of the participants')),
