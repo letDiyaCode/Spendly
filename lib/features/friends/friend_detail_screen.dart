@@ -87,6 +87,12 @@ class FriendDetailScreen extends ConsumerWidget {
                               : '${friendName.split(' ').first} paid · your share ₹${myShare.toStringAsFixed(0)}',
                           style: AppTextStyles.caption(color: SpendlyColors.neutral500),
                         ),
+                        if (e.imageUrl != null && e.imageUrl!.isNotEmpty)
+                          Text(
+                            'Receipt attached',
+                            style: AppTextStyles.caption(color: SpendlyColors.primary)
+                                .copyWith(fontWeight: FontWeight.w700),
+                          ),
                       ],
                     ),
                   ),

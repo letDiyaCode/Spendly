@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/models/expense.dart';
@@ -18,11 +17,13 @@ const _uuid = Uuid();
 class AddExpenseScreen extends ConsumerStatefulWidget {
   final String? groupId;
   final String? expenseId;
+  final String? preselectedFriendId;
 
   const AddExpenseScreen({
     super.key,
     this.groupId,
     this.expenseId,
+    this.preselectedFriendId,
   });
 
   @override
@@ -56,52 +57,49 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       _expenseType = ExpenseType.group;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Handle pre-selected friend from navigation extra
-      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
-      final preselectedFriendId = extra?['friendId'] as String?;
-      if (preselectedFriendId != null) {
-        setState(() {
-          _selectedFriendIds.add(preselectedFriendId);
-          _expenseType = ExpenseType.personal;
-        });
+    if (widget.preselectedFriendId != null) {
+      _selectedFriendIds.add(widget.preselectedFriendId!);
+      _expenseType = ExpenseType.personal;
+    }
+
+    if (_isEdit) {
+      final expense = ref.read(expenseProvider).firstWhere(
+        (e) => e.id == widget.expenseId,
+        orElse: () => throw Exception('Expense not found'),
+      );
+
+      _expenseType = expense.type;
+      _selectedGroupId = expense.groupId;
+      _amountController.text = expense.amount.toStringAsFixed(2);
+      _descController.text = expense.description;
+      _category = expense.category;
+      _splitType = expense.splitType;
+      _receiptUrl = expense.imageUrl;
+      _paidById = expense.paidById;
+
+      if (_expenseType == ExpenseType.personal) {
+        final currentUser = ref.read(authProvider);
+        _selectedFriendIds = expense.participants
+            .where((id) => id != currentUser?.id)
+            .toSet();
       }
-      if (_isEdit) {
-        final expense = ref.read(expenseProvider).firstWhere(
-          (e) => e.id == widget.expenseId,
-          orElse: () => throw Exception('Expense not found'),
-        );
 
-        setState(() {
-          _expenseType = expense.type;
-          _selectedGroupId = expense.groupId;
-          _amountController.text = expense.amount.toStringAsFixed(2);
-          _descController.text = expense.description;
-          _category = expense.category;
-          _splitType = expense.splitType;
-          _receiptUrl = expense.imageUrl;
-          _paidById = expense.paidById;
-          
-          if (_expenseType == ExpenseType.personal) {
-            final currentUser = ref.read(authProvider);
-            _selectedFriendIds = expense.participants.where((id) => id != currentUser?.id).toSet();
-          }
-
-          if (_splitType != SplitType.equal) {
-            for (final entry in expense.splitDetails.entries) {
-              final val = _splitType == SplitType.percentage
-                  ? (entry.value / expense.amount * 100)
-                  : entry.value;
-              _splitControllers[entry.key] = TextEditingController(
-                text: val.toStringAsFixed(val % 1 == 0 ? 0 : 2),
-              );
-            }
-          }
-        });
-      } else {
+      if (_splitType != SplitType.equal) {
+        for (final entry in expense.splitDetails.entries) {
+          final val = _splitType == SplitType.percentage
+              ? (entry.value / expense.amount * 100)
+              : entry.value;
+          _splitControllers[entry.key] = TextEditingController(
+            text: val.toStringAsFixed(val % 1 == 0 ? 0 : 2),
+          );
+        }
+      }
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         _descFocusNode.requestFocus();
-      }
-    });
+      });
+    }
   }
 
   @override
@@ -148,8 +146,14 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
     setState(() => _isUploading = true);
     try {
-      final url = await ref.read(cloudinaryServiceProvider).uploadImage(File(image.path));
-      if (url != null) setState(() => _receiptUrl = url);
+      final url = await ref.read(cloudinaryServiceProvider).uploadXFile(image);
+      if (url != null) {
+        setState(() => _receiptUrl = url);
+      } else {
+        _showInlineError(
+          'Image upload failed. Please check Cloudinary preset/config and try again.',
+        );
+      }
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -213,7 +217,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                   child: friends.isEmpty
                       ? Center(
                           child: Text(
-                            'No friends yet. Join a group to add friends!',
+                            'No friends yet. Add one from the Friends tab or join a group.',
                             style: AppTextStyles.caption(color: SpendlyColors.neutral500),
                             textAlign: TextAlign.center,
                           ),
@@ -514,7 +518,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     if (_receiptUrl != null) {
       return Stack(
         children: [
-          ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(_receiptUrl!, height: 120, width: 120, fit: BoxFit.cover)),
+          SpendlyImage(source: _receiptUrl!, height: 120, width: 120, fit: BoxFit.cover, borderRadius: BorderRadius.circular(12)),
           Positioned(top: 4, right: 4, child: GestureDetector(onTap: () => setState(() => _receiptUrl = null),
               child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
                   child: const Icon(Icons.close, color: Colors.white, size: 16)))),
@@ -537,10 +541,19 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       return;
     }
     if (_descController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a description')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a description')),
+      );
       return;
     }
-    
+
+    if (_expenseType == ExpenseType.group && _selectedGroupId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a group')),
+      );
+      return;
+    }
+
     final participants = _currentParticipants;
     // Allow solo expenses (1 participant)
     if (participants.isEmpty) {
@@ -550,9 +563,26 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
 
     final user = ref.read(authProvider);
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be logged in to save expenses')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to save expenses')),
+      );
       return;
     }
+
+    final paidById = _paidById ?? user.id;
+    if (!participants.contains(paidById)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payer must be one of the participants')),
+      );
+      return;
+    }
+
+    final existingExpense = _isEdit
+        ? ref.read(expenseProvider).firstWhere(
+              (e) => e.id == widget.expenseId,
+              orElse: () => throw Exception('Expense not found'),
+            )
+        : null;
 
     setState(() => _isUploading = true); // Reuse _isUploading as a general loading state
 
@@ -572,7 +602,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
           splitDetails[p] = share;
           totalSplit += share;
         }
-        
+
         // Exact split validation
         final difference = _round2(totalSplit - amount);
         if (_splitType == SplitType.exact && difference > 0.01) {
@@ -599,7 +629,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         }
         if (_splitType == SplitType.percentage && difference.abs() > 0.1) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Split percentages must total 100%.')),
+            const SnackBar(content: Text('Split percentages must total 100%.')),
           );
           setState(() => _isUploading = false);
           return;
@@ -611,14 +641,17 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         type: _expenseType,
         groupId: _expenseType == ExpenseType.group ? _selectedGroupId : null,
         participants: participants,
-        paidById: _paidById ?? user.id,
+        paidById: paidById,
         amount: amount,
         splitDetails: splitDetails,
         splitType: _splitType,
         category: _category,
-        date: DateTime.now(),
+        date: existingExpense?.date ?? DateTime.now(),
         description: _descController.text.trim(),
         imageUrl: _receiptUrl,
+        approvals: existingExpense?.approvals ??
+            (_expenseType == ExpenseType.group ? [paidById] : const []),
+        rejections: existingExpense?.rejections ?? const [],
       );
 
       if (_isEdit) {
@@ -628,7 +661,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Expense saved successfully!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Expense saved successfully!')),
+        );
         context.pop();
       }
     } catch (e) {

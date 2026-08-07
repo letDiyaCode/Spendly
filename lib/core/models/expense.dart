@@ -39,6 +39,11 @@ class Expense {
 
   factory Expense.fromJson(Map<String, dynamic> json, {String? id}) {
     final rawSplit = json['splitDetails'] as Map<String, dynamic>? ?? {};
+    final parsedImageUrl =
+        json['imageUrl'] as String? ??
+        json['receiptUrl'] as String? ??
+        json['proofUrl'] as String? ??
+        json['proofImageUrl'] as String?;
     return Expense(
       id: id ?? json['id'] as String? ?? '',
       type: ExpenseType.values.firstWhere(
@@ -63,7 +68,7 @@ class Expense {
           : (json['date'] as dynamic)?.toDate() ?? DateTime.now(),
       description: json['description'] as String? ?? '',
       notes: json['notes'] as String?,
-      imageUrl: json['imageUrl'] as String?,
+      imageUrl: parsedImageUrl,
       paymentMethod: json['paymentMethod'] != null
           ? PaymentMethod.values.firstWhere(
               (e) => e.name == json['paymentMethod'],
@@ -90,6 +95,7 @@ class Expense {
       'description': description,
       if (notes != null) 'notes': notes,
       if (imageUrl != null) 'imageUrl': imageUrl,
+      if (imageUrl != null) 'receiptUrl': imageUrl,
       if (paymentMethod != null) 'paymentMethod': paymentMethod!.name,
       'approvals': approvals,
       'rejections': rejections,

@@ -14,12 +14,14 @@ final activityProvider = Provider<List<ActivityEvent>>((ref) {
   final users = usersAsync.value ?? <AppUser>[];
 
   String userName(String uid) {
+    if (uid == currentUserId) return 'You';
     final u = users.cast<dynamic>().firstWhere(
           (u) => u.id == uid,
           orElse: () => null,
         );
-    if (u == null) return uid;
-    if (uid == currentUserId) return 'You';
+    if (u == null) {
+      return uid.length > 10 ? 'A member' : uid;
+    }
     return u.name.toString().split(' ').first;
   }
 
@@ -71,6 +73,8 @@ final activityProvider = Provider<List<ActivityEvent>>((ref) {
         'groupId': e.groupId,
         'isCurrentUserPayer': isCurrentUserPayer,
         'myShare': myShare,
+        'imageUrl': e.imageUrl,
+        'hasImage': e.imageUrl != null && e.imageUrl!.isNotEmpty,
       },
     ));
   }

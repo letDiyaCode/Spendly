@@ -6,7 +6,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/shared_widgets.dart';
 import '../auth/auth_provider.dart';
 
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../core/services/cloudinary_service.dart';
 
@@ -37,19 +36,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
-    
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+
     if (image == null) return;
 
     setState(() => _isLoading = true);
     try {
-      final url = await ref.read(cloudinaryServiceProvider).uploadImage(File(image.path));
+      final url = await ref.read(cloudinaryServiceProvider).uploadXFile(image);
       if (url != null) {
         setState(() => _newAvatarUrl = url);
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to upload image. Please check your Cloudinary preset.')),
+            const SnackBar(
+              content: Text(
+                'Failed to upload image. Please check your Cloudinary preset.',
+              ),
+            ),
           );
         }
       }

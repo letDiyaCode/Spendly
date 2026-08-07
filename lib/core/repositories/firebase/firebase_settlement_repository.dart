@@ -138,6 +138,11 @@ class FirebaseSettlementRepository implements SettlementRepository {
 
     if (imageFile is File) {
       proofUrl = await _cloudinary.uploadImage(imageFile);
+      if (proofUrl == null || proofUrl.isEmpty) {
+        throw StateError(
+          'Proof image upload failed. Please check your internet connection and try again.',
+        );
+      }
     }
 
     final data = settlement

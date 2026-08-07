@@ -249,6 +249,16 @@ class _PersonalExpensesScreenState
                                       const SizedBox(height: 4),
                                       Row(
                                         children: [
+                                          if (e.imageUrl != null && e.imageUrl!.isNotEmpty)
+                                            SpendlyImage(
+                                              source: e.imageUrl!,
+                                              width: 34,
+                                              height: 34,
+                                              fit: BoxFit.cover,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                          if (e.imageUrl != null && e.imageUrl!.isNotEmpty)
+                                            const SizedBox(width: 8),
                                           // Category badge
                                           Container(
                                             padding: const EdgeInsets.symmetric(
@@ -290,12 +300,12 @@ class _PersonalExpensesScreenState
                                               ),
                                             ),
                                           ],
-                                          // Receipt icon indicator
-                                          if (e.imageUrl != null) ...[
+                                          if (e.imageUrl != null && e.imageUrl!.isNotEmpty) ...[
                                             const SizedBox(width: 6),
-                                            Icon(Icons.receipt_outlined,
-                                                size: 12,
-                                                color: SpendlyColors.primary),
+                                            Text(
+                                              'Receipt',
+                                              style: AppTextStyles.caption(color: SpendlyColors.primary).copyWith(fontWeight: FontWeight.w700),
+                                            ),
                                           ],
                                         ],
                                       ),

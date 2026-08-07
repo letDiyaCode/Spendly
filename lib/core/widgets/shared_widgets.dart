@@ -282,6 +282,59 @@ class UserAvatar extends StatelessWidget {
   }
 }
 
+class SpendlyImage extends StatelessWidget {
+  final String source;
+  final BoxFit fit;
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+
+  const SpendlyImage({
+    super.key,
+    required this.source,
+    this.fit = BoxFit.cover,
+    this.width,
+    this.height,
+    this.borderRadius,
+  });
+
+  bool _isRemote(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        uri.hasScheme &&
+        (uri.scheme == 'http' || uri.scheme == 'https');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final image = _isRemote(source)
+        ? Image.network(
+            source,
+            width: width,
+            height: height,
+            fit: fit,
+            errorBuilder: (context, error, stackTrace) => _fallback(context),
+          )
+        : _fallback(context);
+
+    if (borderRadius == null) return image;
+    return ClipRRect(borderRadius: borderRadius!, child: image);
+  }
+
+  Widget _fallback(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.broken_image_outlined,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+}
+
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 class StatusBadge extends StatelessWidget {

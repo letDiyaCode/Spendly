@@ -36,6 +36,11 @@ class Settlement {
   });
 
   factory Settlement.fromJson(Map<String, dynamic> json, {String? id}) {
+    final parsedProofUrl =
+        json['proofUrl'] as String? ??
+        json['proofImageUrl'] as String? ??
+        json['imageUrl'] as String?;
+
     return Settlement(
       id: id ?? json['id'] as String? ?? '',
       fromUserId: json['fromUser'] as String? ?? json['fromUserId'] as String? ?? '',
@@ -49,7 +54,7 @@ class Settlement {
           ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int)
           : (json['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
       transactionId: json['transactionId'] as String?,
-      proofUrl: json['proofUrl'] as String?,
+      proofUrl: parsedProofUrl,
       groupId: json['groupId'] as String?,
       rejectionReason: json['rejectionReason'] as String?,
       verificationAttempts: (json['verificationAttempts'] as num?)?.toInt() ?? 0,
@@ -68,6 +73,8 @@ class Settlement {
       'status': status.name,
       if (transactionId != null) 'transactionId': transactionId,
       if (proofUrl != null) 'proofUrl': proofUrl,
+      if (proofUrl != null) 'proofImageUrl': proofUrl,
+      if (proofUrl != null) 'imageUrl': proofUrl,
       if (groupId != null) 'groupId': groupId,
       if (rejectionReason != null) 'rejectionReason': rejectionReason,
       'verificationAttempts': verificationAttempts,

@@ -138,6 +138,12 @@ class _ActivityTile extends StatelessWidget {
       event.type == ActivityType.expenseAdded ||
       event.type == ActivityType.settled;
 
+    bool get _hasReceiptImage =>
+      event.type == ActivityType.expenseAdded &&
+      (event.metadata?['hasImage'] as bool? ?? false);
+
+    String? get _receiptImageUrl => event.metadata?['imageUrl'] as String?;
+
   @override
   Widget build(BuildContext context) {
     // Parse the description for the amount note (after \n)
@@ -218,6 +224,44 @@ class _ActivityTile extends StatelessWidget {
                       style: AppTextStyles.caption(
                           color: SpendlyColors.neutral400),
                     ),
+                    if (_hasReceiptImage && _receiptImageUrl != null) ...[
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: GestureDetector(
+                          onTap: onTap,
+                          child: Stack(
+                            children: [
+                              SpendlyImage(
+                                source: _receiptImageUrl!,
+                                height: 72,
+                                width: 110,
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                right: 6,
+                                bottom: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'Receipt',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

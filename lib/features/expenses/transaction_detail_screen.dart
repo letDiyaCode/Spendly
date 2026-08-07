@@ -199,12 +199,15 @@ class TransactionDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                if (expense.imageUrl != null) ...[
+                if (expense.imageUrl != null && expense.imageUrl!.isNotEmpty) ...[
                    Text('Receipt', style: AppTextStyles.sectionLabel()),
                    const SizedBox(height: 10),
-                   ClipRRect(
+                   SpendlyImage(
+                     source: expense.imageUrl!,
+                     height: 220,
+                     width: double.infinity,
+                     fit: BoxFit.cover,
                      borderRadius: BorderRadius.circular(14),
-                     child: Image.network(expense.imageUrl!, width: double.infinity, fit: BoxFit.fitWidth),
                    ),
                    const SizedBox(height: 12),
                 ],
