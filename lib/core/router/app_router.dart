@@ -24,6 +24,7 @@ import '../../features/settlements/settle_up_screen.dart';
 import '../../features/settlements/balance_selection_screen.dart';
 
 import '../../features/friends/friends_screen.dart';
+import '../../features/friends/add_friend_screen.dart';
 import '../../features/friends/friend_detail_screen.dart';
 
 import '../../features/activity/activity_screen.dart';
@@ -139,6 +140,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const FriendsScreen(),
             routes: [
               GoRoute(
+                path: 'add',
+                name: 'add-friend',
+                builder: (context, state) => const AddFriendScreen(),
+              ),
+              GoRoute(
                 path: ':userId',
                 name: 'friend-detail',
                 builder: (context, state) {
@@ -175,9 +181,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               final extra = state.extra as Map<String, dynamic>?;
               final expenseId = extra?['expenseId'] as String?;
               final groupId = extra?['groupId'] as String?;
+              final preselectedFriendId = extra?['friendId'] as String?;
               return AddExpenseScreen(
                 groupId: groupId,
                 expenseId: expenseId,
+                preselectedFriendId: preselectedFriendId,
               );
             },
           ),

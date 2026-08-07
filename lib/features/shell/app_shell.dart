@@ -14,8 +14,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   DateTime? _lastBackPress;
 
-  int _calculateIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
+  int _calculateIndex(String location) {
     if (location.startsWith('/home')) return 0;
     if (location.startsWith('/groups')) return 1;
     if (location.startsWith('/friends')) return 2;
@@ -25,8 +24,7 @@ class _AppShellState extends State<AppShell> {
     return 4;
   }
 
-  Future<bool> _onPopInvoked(BuildContext context) async {
-    final currentIndex = _calculateIndex(context);
+  Future<bool> _onPopInvoked(BuildContext context, int currentIndex) async {
 
     // If not on home tab, go to home tab instead of exiting
     if (currentIndex != 0) {
@@ -58,14 +56,15 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = _calculateIndex(context);
+    final location = GoRouterState.of(context).matchedLocation;
+    final currentIndex = _calculateIndex(location);
     final cs = Theme.of(context).colorScheme;
     final canRoutePop = GoRouter.of(context).canPop();
 
     return PopScope(
       canPop: canRoutePop,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) _onPopInvoked(context);
+        if (!didPop) _onPopInvoked(context, currentIndex);
       },
       child: Scaffold(
         body: widget.child,

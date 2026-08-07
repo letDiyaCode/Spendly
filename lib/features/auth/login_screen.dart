@@ -258,7 +258,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       _showError("Google Sign-In failed");
     } finally {
-      setState(() => _googleLoading = false);
+      if (mounted) {
+        setState(() => _googleLoading = false);
+      }
     }
   }
 

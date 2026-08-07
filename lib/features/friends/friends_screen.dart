@@ -29,6 +29,11 @@ class FriendsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Friends'),
         actions: [
+          IconButton(
+            onPressed: () => context.push('/friends/add'),
+            icon: const Icon(Icons.person_add_alt_1_rounded),
+            tooltip: 'Add Friend',
+          ),
           TextButton.icon(
             onPressed: () => context.go('/settle'),
             icon: const Icon(Icons.handshake_outlined, size: 18),
@@ -84,7 +89,9 @@ class FriendsScreen extends ConsumerWidget {
                             icon: Icons.people_outline,
                             title: 'No friends yet',
                             subtitle:
-                                'Join a group to see friends and balances here',
+                                'Add a friend directly or join a group to see balances here',
+                              actionLabel: 'Add Friend',
+                              onAction: () => context.push('/friends/add'),
                           ),
                         ),
                       ),
@@ -125,9 +132,9 @@ class FriendsScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/expenses/add'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Expense'),
+        onPressed: () => context.push('/friends/add'),
+        icon: const Icon(Icons.person_add_alt_1_rounded),
+        label: const Text('Add Friend'),
       ),
     );
   }

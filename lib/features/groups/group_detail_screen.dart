@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/models/enums.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/approval_rules.dart';
 import '../../core/widgets/shared_widgets.dart';
 import '../auth/auth_provider.dart';
 import 'group_provider.dart';
@@ -29,6 +31,7 @@ class GroupDetailScreen extends ConsumerWidget {
     final netBalances = ref.watch(groupNetBalanceProvider(groupId));
     final suggestions = ref.watch(debtSuggestionsProvider(groupId));
     final user = ref.watch(authProvider);
+    final requiredApprovals = requiredApprovalsForGroup(group);
 
     return Scaffold(
       body: RefreshIndicator(
@@ -359,6 +362,17 @@ class GroupDetailScreen extends ConsumerWidget {
                                               ?.copyWith(
                                                   color: SpendlyColors.neutral500),
                                         ),
+                                        if (expense.imageUrl != null && expense.imageUrl!.isNotEmpty)
+                                          Text(
+                                            'Receipt attached',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: SpendlyColors.primary,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -396,13 +410,20 @@ class GroupDetailScreen extends ConsumerWidget {
                                   if (expense.approvals.isNotEmpty) ...[
                                     Icon(Icons.check_circle_rounded, size: 14, color: SpendlyColors.success.withAlpha(180)),
                                     const SizedBox(width: 4),
-                                    Text('${expense.approvals.length}', style: AppTextStyles.caption(color: SpendlyColors.success)),
+                                    Text('${expense.approvals.length}/$requiredApprovals', style: AppTextStyles.caption(color: SpendlyColors.success)),
                                     const SizedBox(width: 8),
                                   ],
                                   if (expense.rejections.isNotEmpty) ...[
                                     Icon(Icons.cancel_rounded, size: 14, color: SpendlyColors.danger.withAlpha(180)),
                                     const SizedBox(width: 4),
-                                    Text('${expense.rejections.length}', style: AppTextStyles.caption(color: SpendlyColors.danger)),
+                                    Text('${expense.rejections.length}/$requiredApprovals', style: AppTextStyles.caption(color: SpendlyColors.danger)),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  if (expense.type == ExpenseType.group && expense.approvals.length < requiredApprovals && expense.rejections.length < requiredApprovals) ...[
+                                    Text(
+                                      'Needs $requiredApprovals approvals',
+                                      style: AppTextStyles.caption(color: SpendlyColors.neutral500),
+                                    ),
                                     const SizedBox(width: 8),
                                   ],
                                   if (!expense.approvals.contains(user?.id) && !expense.rejections.contains(user?.id) && !isPaidByMe) ...[

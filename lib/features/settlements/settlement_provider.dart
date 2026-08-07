@@ -5,6 +5,7 @@ import '../../core/models/settlement.dart';
 import '../../core/models/enums.dart';
 import '../../core/utils/debt_simplifier.dart';
 import '../../core/repositories/repository_providers.dart';
+import '../../core/utils/approval_rules.dart';
 import '../auth/auth_provider.dart';
 import '../groups/group_provider.dart';
 import '../expenses/expense_provider.dart';
@@ -356,6 +357,7 @@ final globalBalancesProvider = Provider<Map<String, double>>((ref) {
   if (user == null) return {};
 
   final expenses = ref.watch(expenseProvider);
+  final groups = ref.watch(groupProvider);
   final settlements = ref.watch(userSettlementsProvider).where((s) => s.isVerified).toList();
 
   final Map<String, double> balances = {};
@@ -363,9 +365,8 @@ final globalBalancesProvider = Provider<Map<String, double>>((ref) {
   // 1. Process Expenses
   for (final e in expenses) {
     if (e.type == ExpenseType.group) {
-      // Majority logic: if rejections > approvals, skip this expense for balances
-      if (e.rejections.length > e.approvals.length && e.rejections.length >= 2) continue; 
-      // Or more strictly: if rejections >= approvals + 1
+      final group = groups.where((g) => g.id == e.groupId).firstOrNull;
+      if (!isGroupExpenseApproved(e, group)) continue;
     }
 
     if (e.paidById == user.id) {

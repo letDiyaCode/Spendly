@@ -63,10 +63,38 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> login(String email, String password) async {
     try {
-      await _auth.signInWithEmailAndPassword(
+      final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim().toLowerCase(),
         password: password,
       );
+
+      // Ensure profile exists in users collection for name resolution across the app.
+      final user = credential.user;
+      if (user != null) {
+        final existingProfile = await _userRepo.getUserById(user.uid);
+        final fallbackName = (user.displayName != null &&
+                user.displayName!.trim().isNotEmpty)
+            ? user.displayName!
+            : (user.email?.split('@').first ?? 'User');
+
+        await _userRepo.saveUser(
+          (existingProfile ??
+                  AppUser(
+                    id: user.uid,
+                    name: fallbackName,
+                    email: user.email?.trim().toLowerCase() ??
+                        email.trim().toLowerCase(),
+                  ))
+              .copyWith(
+            name: existingProfile?.name.trim().isNotEmpty == true
+                ? existingProfile!.name
+                : fallbackName,
+            email:
+                user.email?.trim().toLowerCase() ?? email.trim().toLowerCase(),
+            avatarUrl: existingProfile?.avatarUrl ?? user.photoURL,
+          ),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       throw _mapAuthError(e);
     }

@@ -7,6 +7,7 @@ class AppUser {
   final String? avatarUrl;
   final String? bio;
   final bool isVerified;
+  final List<String> friendIds;
 
   const AppUser({
     required this.id,
@@ -15,6 +16,7 @@ class AppUser {
     this.avatarUrl,
     this.bio,
     this.isVerified = false,
+    this.friendIds = const [],
   });
 
   /// Generates a consistent color for this user's avatar
@@ -49,6 +51,7 @@ class AppUser {
       avatarUrl: json['avatarUrl'] as String?,
       bio: json['bio'] as String?,
       isVerified: json['isVerified'] as bool? ?? false,
+      friendIds: List<String>.from(json['friendIds'] ?? const []),
     );
   }
 
@@ -60,6 +63,7 @@ class AppUser {
       if (avatarUrl != null) 'avatarUrl': avatarUrl,
       if (bio != null) 'bio': bio,
       'isVerified': isVerified,
+      'friendIds': friendIds,
     };
   }
 
@@ -70,6 +74,7 @@ class AppUser {
     String? avatarUrl,
     String? bio,
     bool? isVerified,
+    List<String>? friendIds,
   }) {
     return AppUser(
       id: id ?? this.id,
@@ -78,6 +83,7 @@ class AppUser {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       bio: bio ?? this.bio,
       isVerified: isVerified ?? this.isVerified,
+      friendIds: friendIds ?? this.friendIds,
     );
   }
 

@@ -4,6 +4,7 @@ import '../../core/models/expense.dart';
 import '../../core/repositories/repository_providers.dart';
 import '../../core/models/enums.dart';
 import '../../core/models/app_user.dart';
+import '../../core/utils/approval_rules.dart';
 import '../auth/auth_provider.dart';
 import '../expenses/expense_provider.dart';
 import '../settlements/settlement_provider.dart';
@@ -60,6 +61,52 @@ class GroupActionNotifier {
   }
 }
 
+final friendActionProvider = Provider<FriendActionNotifier>((ref) {
+  return FriendActionNotifier(ref);
+});
+
+class FriendActionNotifier {
+  final Ref _ref;
+
+  FriendActionNotifier(this._ref);
+
+  Future<void> addFriend(String friendUserId) async {
+    final currentUser = _ref.read(authProvider);
+    if (currentUser == null) {
+      throw Exception('You must be logged in to add a friend.');
+    }
+    if (currentUser.id == friendUserId) {
+      throw Exception('You cannot add yourself as a friend.');
+    }
+
+    final userRepo = _ref.read(userRepositoryProvider);
+    final users = await userRepo.getUsers();
+
+    final currentProfile = users.firstWhere(
+      (user) => user.id == currentUser.id,
+      orElse: () => currentUser.copyWith(),
+    );
+    final friendProfile = users.firstWhere(
+      (user) => user.id == friendUserId,
+      orElse: () => throw Exception('Friend not found.'),
+    );
+
+    final updatedCurrentIds = <String>{
+      ...currentProfile.friendIds,
+      friendUserId,
+    }.toList();
+    final updatedFriendIds = <String>{
+      ...friendProfile.friendIds,
+      currentUser.id,
+    }.toList();
+
+    await userRepo.saveUser(currentProfile.copyWith(friendIds: updatedCurrentIds));
+    await userRepo.saveUser(friendProfile.copyWith(friendIds: updatedFriendIds));
+
+    _ref.invalidate(usersStreamProvider);
+  }
+}
+
 // Keep groupProvider as a list of groups for compatibility
 final groupProvider = Provider<List<Group>>((ref) {
   return ref.watch(groupsStreamProvider).value ?? [];
@@ -100,6 +147,10 @@ final groupNetBalanceProvider =
   final Map<String, double> net = {for (var id in group.memberIds) id: 0.0};
 
   for (final expense in expenses) {
+    if (!isGroupExpenseApproved(expense, group)) {
+      continue;
+    }
+
     for (final entry in expense.splitDetails.entries) {
       final uid = entry.key;
       final amt = entry.value;
@@ -128,7 +179,10 @@ final friendsProvider = Provider<List<AppUser>>((ref) {
 
   if (currentUser == null) return [];
 
+  final currentProfile = ref.watch(userByIdProvider(currentUser.id));
+
   final sharedUserIds = <String>{};
+  sharedUserIds.addAll(currentProfile?.friendIds ?? const []);
   for (final group in groups) {
     if (group.memberIds.contains(currentUser.id)) {
       sharedUserIds.addAll(group.memberIds);
