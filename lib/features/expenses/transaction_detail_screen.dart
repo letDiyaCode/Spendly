@@ -202,12 +202,39 @@ class TransactionDetailScreen extends ConsumerWidget {
                 if (expense.imageUrl != null && expense.imageUrl!.isNotEmpty) ...[
                    Text('Receipt', style: AppTextStyles.sectionLabel()),
                    const SizedBox(height: 10),
-                   SpendlyImage(
-                     source: expense.imageUrl!,
-                     height: 220,
-                     width: double.infinity,
-                     fit: BoxFit.cover,
-                     borderRadius: BorderRadius.circular(14),
+                   GestureDetector(
+                     onTap: () => showSpendlyImageViewer(
+                       context,
+                       source: expense.imageUrl!,
+                     ),
+                     child: Stack(
+                       alignment: Alignment.center,
+                       children: [
+                         SpendlyImage(
+                           source: expense.imageUrl!,
+                           height: 220,
+                           width: double.infinity,
+                           fit: BoxFit.cover,
+                           borderRadius: BorderRadius.circular(14),
+                         ),
+                         Positioned(
+                           right: 10,
+                           bottom: 10,
+                           child: Container(
+                             padding: const EdgeInsets.all(7),
+                             decoration: BoxDecoration(
+                               color: Colors.black54,
+                               borderRadius: BorderRadius.circular(10),
+                             ),
+                             child: const Icon(
+                               Icons.open_in_full_rounded,
+                               color: Colors.white,
+                               size: 18,
+                             ),
+                           ),
+                         ),
+                       ],
+                     ),
                    ),
                    const SizedBox(height: 12),
                 ],

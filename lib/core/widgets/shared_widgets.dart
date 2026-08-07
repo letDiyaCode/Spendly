@@ -397,6 +397,53 @@ class SpendlyImage extends StatelessWidget {
   }
 }
 
+void showSpendlyImageViewer(
+  BuildContext context, {
+  required String source,
+}) {
+  showDialog(
+    context: context,
+    builder: (ctx) {
+      final size = MediaQuery.of(ctx).size;
+      return Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(12),
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 4,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: size.width * 0.96,
+                    maxHeight: size.height * 0.82,
+                  ),
+                  child: SpendlyImage(
+                    source: source,
+                    fit: BoxFit.contain,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 4,
+              right: 4,
+              child: IconButton.filled(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(Icons.close_rounded),
+                color: Colors.white,
+                style: IconButton.styleFrom(backgroundColor: Colors.black54),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 class StatusBadge extends StatelessWidget {

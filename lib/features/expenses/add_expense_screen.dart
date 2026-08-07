@@ -523,7 +523,16 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     if (_receiptUrl != null) {
       return Stack(
         children: [
-          SpendlyImage(source: _receiptUrl!, height: 120, width: 120, fit: BoxFit.cover, borderRadius: BorderRadius.circular(12)),
+          GestureDetector(
+            onTap: () => showSpendlyImageViewer(context, source: _receiptUrl!),
+            child: SpendlyImage(
+              source: _receiptUrl!,
+              height: 120,
+              width: 120,
+              fit: BoxFit.cover,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           Positioned(top: 4, right: 4, child: GestureDetector(onTap: () => setState(() => _receiptUrl = null),
               child: Container(padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
                   child: const Icon(Icons.close, color: Colors.white, size: 16)))),

@@ -11,7 +11,7 @@ final cloudinaryServiceProvider = Provider((ref) => CloudinaryService());
 
 class CloudinaryService {
   static const String _defaultCloudName = 'dqrrzwb59';
-  static const String _defaultUploadPreset = 'unsigned_preset';
+  static const String _defaultUploadPreset = 'Images';
 
   final String cloudName = const String.fromEnvironment(
     'SPENDLY_CLOUDINARY_CLOUD_NAME',
