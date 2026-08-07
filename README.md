@@ -40,7 +40,7 @@ Built with a **Feature-First Architecture**, Spendly ensures scalability and mai
 *   **Comments & Interaction**: Discuss specific expenses within the app to clarify costs.
 
 ### 🛠 Core Utilities
-*   **Receipt Uploads & Previews**: Upload receipts seamlessly using `image_picker` integrated with `Cloudinary` cloud storage, featuring interactive image previews.
+*   **Receipt Uploads & Interactive Viewer**: Upload receipts seamlessly using `image_picker` integrated with `Cloudinary` cloud storage, featuring an interactive image viewer to inspect uploaded receipts and documents in detail.
 *   **Theming**: Dynamic theme support (Light/Dark mode) defined in the core configuration.
 *   **Deep Linking**: Advanced routing handled by `go_router`.
 *   **Flexible Environments**: Support for toggling between **Demo Mode** and **Original Mode** via app configuration.
@@ -145,6 +145,19 @@ Receipts and profile images are uploaded to Cloudinary. Here is an example of up
 dart
 final cloudinaryService = ref.read(cloudinaryServiceProvider);
 final imageUrl = await cloudinaryService.uploadImage(imageFile);
+
+
+### Interactive Image Viewer
+Uploaded receipts and transaction attachments can be opened in an interactive image viewer widget for close inspection:
+
+dart
+// Open the uploaded image in the interactive viewer
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => ImageViewer(imageUrl: imageUrl),
+  ),
+);
 
 
 ### Navigation
